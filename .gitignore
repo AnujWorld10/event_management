@@ -1,0 +1,32 @@
+# Python bytecode files
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environment
+venv/
+*.venv
+
+# IDE and editor folders (e.g., for VS Code, PyCharm, etc.)
+.vscode/
+.idea/
+
+# Environment variables (useful for avoiding accidental inclusion of sensitive data)
+.env
+.env.*
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints
+
+# Logs and temp files
+*.log
+*.bak
+*.swp
+
+# OS-specific files
+.DS_Store   # macOS
+Thumbs.db   # Windows
+
+# Coverage reports
+.coverage
+*.cover
