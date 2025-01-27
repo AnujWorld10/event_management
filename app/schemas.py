@@ -10,6 +10,7 @@ class AttendeeCreate(BaseModel):
     email: str
     phone_number: Optional[str] = None
     event_id: int
+    check_in_status: Optional[bool] = None
 
 
 class AttendeeUpdate(BaseModel):
