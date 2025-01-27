@@ -14,6 +14,7 @@ router = APIRouter()
 @router.post("/", response_model=AttendeeResponse)
 async def create_attendee(attendee: AttendeeCreate, db: Session = Depends(get_db)):
     try:
+
         existing_attendee = (
             db.query(Attendee).filter(Attendee.email == attendee.email).first()
         )
@@ -21,6 +22,19 @@ async def create_attendee(attendee: AttendeeCreate, db: Session = Depends(get_db
             raise HTTPException(
                 status_code=400,
                 detail=f"Attendee with email '{attendee.email}' already exists.",
+            )
+
+        event = db.query(Event).filter(Event.event_id == attendee.event_id).first()
+        if not event:
+            raise HTTPException(status_code=404, detail="Event not found")
+
+        current_attendees_count = (
+            db.query(Attendee).filter(Attendee.event_id == attendee.event_id).count()
+        )
+        if current_attendees_count >= event.max_attendees:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot add attendee. The event has reached its maximum attendee limit of {event.max_attendees}.",
             )
 
         db_attendee = Attendee(
@@ -38,7 +52,8 @@ async def create_attendee(attendee: AttendeeCreate, db: Session = Depends(get_db
         return db_attendee
 
     except IntegrityError as e:
-        db.rollback()
+        # Handle unique constraint violation (duplicate email)
+        db.rollback()  # Rollback the session to avoid any partial commits
         raise HTTPException(
             status_code=400, detail=f"Duplicate entry: {e.orig.args[1]}"
         )
