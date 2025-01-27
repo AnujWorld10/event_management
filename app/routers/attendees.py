@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Attendee, Event
@@ -12,9 +13,15 @@ router = APIRouter()
 @router.post("/", response_model=AttendeeResponse)
 async def create_attendee(attendee: AttendeeCreate, db: Session = Depends(get_db)):
     try:
-        event = db.query(Event).filter(Event.event_id == attendee.event_id).first()
-        if not event:
-            raise HTTPException(status_code=404, detail="Event not found")
+        # Check if the attendee already exists by email
+        existing_attendee = (
+            db.query(Attendee).filter(Attendee.email == attendee.email).first()
+        )
+        if existing_attendee:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Attendee with email '{attendee.email}' already exists.",
+            )
 
         db_attendee = Attendee(
             first_name=attendee.first_name,
@@ -22,11 +29,21 @@ async def create_attendee(attendee: AttendeeCreate, db: Session = Depends(get_db
             email=attendee.email,
             phone_number=attendee.phone_number,
             event_id=attendee.event_id,
+            check_in_status=attendee.check_in_status,
         )
+
         db.add(db_attendee)
         db.commit()
         db.refresh(db_attendee)
         return db_attendee
+
+    except IntegrityError as e:
+        # Handle unique constraint violation (duplicate email)
+        db.rollback()  # Rollback the session to avoid any partial commits
+        raise HTTPException(
+            status_code=400, detail=f"Duplicate entry: {e.orig.args[1]}"
+        )
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error creating attendee: {e}")
 
