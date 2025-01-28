@@ -9,7 +9,6 @@ from app.models import Event, EventStatus
 from app.routers import check_in
 
 
-# Initialize FastAPI app
 app = FastAPI(title="Event Management API")
 
 
@@ -27,18 +26,15 @@ def update_event_statuses():
     db.close()
 
 
-# Schedule the background job to run every 10 minutes
 scheduler = BackgroundScheduler()
 scheduler.add_job(update_event_statuses, "interval", minutes=10)
 scheduler.start()
 
-# Create the database tables if they don't exist yet
 try:
     Base.metadata.create_all(bind=engine)
 except Exception as e:
     raise HTTPException(status_code=500, detail=f"Error creating database tables: {e}")
 
-# Include routers for events and attendees
 try:
     app.include_router(events.router, prefix="/events", tags=["Events"])
     app.include_router(attendees.router, prefix="/attendees", tags=["Attendees"])
