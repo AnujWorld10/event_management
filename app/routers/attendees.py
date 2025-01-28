@@ -12,7 +12,7 @@ router = APIRouter()
 
 # API to create an attendee
 @router.post("/", response_model=AttendeeResponse)
-async def create_attendee(attendee: AttendeeCreate, db: Session = Depends(get_db)):
+async def register_attendee(attendee: AttendeeCreate, db: Session = Depends(get_db)):
     try:
 
         existing_attendee = (
@@ -52,8 +52,7 @@ async def create_attendee(attendee: AttendeeCreate, db: Session = Depends(get_db
         return db_attendee
 
     except IntegrityError as e:
-        # Handle unique constraint violation (duplicate email)
-        db.rollback()  # Rollback the session to avoid any partial commits
+        db.rollback()
         raise HTTPException(
             status_code=400, detail=f"Duplicate entry: {e.orig.args[1]}"
         )
@@ -119,18 +118,18 @@ async def get_attendee(attendee_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Error fetching attendee: {e}")
 
 
-# API to delete an attendee
-@router.delete("/{attendee_id}")
-async def delete_attendee(attendee_id: int, db: Session = Depends(get_db)):
-    try:
-        db_attendee = (
-            db.query(Attendee).filter(Attendee.attendee_id == attendee_id).first()
-        )
-        if not db_attendee:
-            raise HTTPException(status_code=404, detail="Attendee not found")
+# # API to delete an attendee
+# @router.delete("/{attendee_id}")
+# async def delete_attendee(attendee_id: int, db: Session = Depends(get_db)):
+#     try:
+#         db_attendee = (
+#             db.query(Attendee).filter(Attendee.attendee_id == attendee_id).first()
+#         )
+#         if not db_attendee:
+#             raise HTTPException(status_code=404, detail="Attendee not found")
 
-        db.delete(db_attendee)
-        db.commit()
-        return {"message": "Attendee deleted successfully"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error deleting attendee: {e}")
+#         db.delete(db_attendee)
+#         db.commit()
+#         return {"message": "Attendee deleted successfully"}
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Error deleting attendee: {e}")

@@ -5,6 +5,7 @@ from app.database import SessionLocal
 from app.models import Event, EventStatus
 from app.schemas import EventCreate, EventUpdate, EventResponse
 from datetime import datetime
+from app.update_event_status import update_event_status_if_needed
 
 router = APIRouter()
 
@@ -30,6 +31,12 @@ async def create_event(event: EventCreate, db: Session = Depends(get_db)):
         if event.start_time >= event.end_time:
             raise HTTPException(
                 status_code=400, detail="Start time must be before end time"
+            )
+
+        if event.max_attendees <= 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Maximum attendees can't be {event.max_attendees}",
             )
 
         # Check if event.status is a string, then convert to EventStatus enum
@@ -65,17 +72,13 @@ async def create_event(event: EventCreate, db: Session = Depends(get_db)):
 async def update_event(
     event_id: int, updated_event: EventUpdate, db: Session = Depends(get_db)
 ):
-    # Query for the event by ID
     event = db.query(Event).filter(Event.event_id == event_id).first()
     if not event:
-        # Raise a 404 error if the event does not exist
         raise HTTPException(status_code=404, detail="Event not found")
 
-    # Update the event with provided fields
     for key, value in updated_event.dict(exclude_unset=True).items():
         setattr(event, key, value)
 
-    # Commit the changes to the database
     db.commit()
     db.refresh(event)
     return event
@@ -114,21 +117,29 @@ async def get_event(event_id: int, db: Session = Depends(get_db)):
         event = db.query(Event).filter(Event.event_id == event_id).first()
         if not event:
             raise HTTPException(status_code=404, detail="Event not found")
+
+        # Update the status if needed (check if event is completed)
+        update_event_status_if_needed(event)
+
+        # Commit changes to the database (if the status was updated)
+        db.commit()
+        db.refresh(event)
+
         return event
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching event: {e}")
 
 
-# Delete an event by its ID
-@router.delete("/{event_id}")
-async def delete_event(event_id: int, db: Session = Depends(get_db)):
-    try:
-        event = db.query(Event).filter(Event.event_id == event_id).first()
-        if not event:
-            raise HTTPException(status_code=404, detail="Event not found")
+# # Delete an event by its ID
+# @router.delete("/{event_id}")
+# async def delete_event(event_id: int, db: Session = Depends(get_db)):
+#     try:
+#         event = db.query(Event).filter(Event.event_id == event_id).first()
+#         if not event:
+#             raise HTTPException(status_code=404, detail="Event not found")
 
-        db.delete(event)
-        db.commit()
-        return {"message": "Event deleted successfully"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error deleting event: {e}")
+#         db.delete(event)
+#         db.commit()
+#         return {"message": "Event deleted successfully"}
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Error deleting event: {e}")
