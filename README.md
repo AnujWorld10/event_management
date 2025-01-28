@@ -12,8 +12,6 @@
 8. [Error Handling](#error-handling)
 9. [Testing](#testing)
 10. [Contributing](#contributing)
-11. [License](#license)
-12. [Contact](#contact)
 
 ---
 
