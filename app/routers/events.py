@@ -119,7 +119,7 @@ async def get_event(event_id: int, db: Session = Depends(get_db)):
             raise HTTPException(status_code=404, detail="Event not found")
 
         # Update the status if needed (check if event is completed)
-        update_event_status_if_needed(event)
+        update_event_status_if_needed(db, event)
 
         # Commit changes to the database (if the status was updated)
         db.commit()
