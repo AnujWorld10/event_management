@@ -10,7 +10,6 @@ from app.update_event_status import update_event_status_if_needed
 router = APIRouter()
 
 
-# Dependency to get the DB session
 def get_db():
     db = SessionLocal()
     try:
@@ -27,7 +26,6 @@ def get_db():
 @router.post("/", response_model=EventResponse)
 async def create_event(event: EventCreate, db: Session = Depends(get_db)):
     try:
-        # Validate start and end times
         if event.start_time >= event.end_time:
             raise HTTPException(
                 status_code=400, detail="Start time must be before end time"
@@ -39,7 +37,6 @@ async def create_event(event: EventCreate, db: Session = Depends(get_db)):
                 detail=f"Maximum attendees can't be {event.max_attendees}",
             )
 
-        # Check if event.status is a string, then convert to EventStatus enum
         if isinstance(event.status, str):
             status_enum = (
                 EventStatus[event.status.upper()]
@@ -118,10 +115,8 @@ async def get_event(event_id: int, db: Session = Depends(get_db)):
         if not event:
             raise HTTPException(status_code=404, detail="Event not found")
 
-        # Update the status if needed (check if event is completed)
         update_event_status_if_needed(db, event)
 
-        # Commit changes to the database (if the status was updated)
         db.commit()
         db.refresh(event)
 
