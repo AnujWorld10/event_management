@@ -44,10 +44,11 @@ def create_sample_event(db, max_attendees=10):
 def create_sample_attendee(db, event_id, name="Test Attendee"):
     """Helper function to create a sample attendee."""
     attendee = Attendee(
-        name=name,
-        email="test@example.com",
+        first_name="sample first_name",
+        last_name="sample last_name",
+        email="test2@example.com",
         event_id=event_id,
-        checked_in=False,
+        check_in_status=False,
     )
     db.add(attendee)
     db.commit()
@@ -85,12 +86,16 @@ def test_check_in(test_db):
     attendee = create_sample_attendee(db, event.event_id)
 
     # Check in the attendee
-    response = client.post(f"/events/{event.event_id}/attendees/{attendee.id}/check-in")
+    response = client.post(
+        f"/events/{event.event_id}/attendees/{attendee.attendee_id}/check-in"
+    )
     assert response.status_code == 200
     assert response.json()["checked_in"] is True
 
     # Attempt to check in the same attendee again
-    response = client.post(f"/events/{event.event_id}/attendees/{attendee.id}/check-in")
+    response = client.post(
+        f"/events/{event.event_id}/attendees/{attendee.attendee_id}/check-in"
+    )
     assert response.status_code == 400
     assert response.json()["detail"] == "Attendee already checked in."
 
@@ -98,7 +103,7 @@ def test_check_in(test_db):
 def test_invalid_event_registration(test_db):
     """Test registering an attendee for a non-existent event."""
     response = client.post(
-        "/events/999/attendees",
+        "/events/2/attendees",
         json={"name": "Invalid Attendee", "email": "invalid@example.com"},
     )
     assert response.status_code == 404
@@ -108,6 +113,6 @@ def test_invalid_event_registration(test_db):
 def test_invalid_check_in(test_db):
     """Test checking in to a non-existent event or attendee."""
     # Attempt to check in a non-existent attendee
-    response = client.post("/events/999/attendees/1/check-in")
+    response = client.post("/events/2/attendees/1/check-in")
     assert response.status_code == 404
     assert response.json()["detail"] == "Event or attendee not found."
