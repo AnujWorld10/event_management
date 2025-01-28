@@ -34,6 +34,8 @@ This API is ideal for managing events in applications such as:
 - Create, update, and delete events.
 - Fetch event details by ID.
 - Filter events based on status, location, or date.
+- Bulk attendee check-in via CSV upload.
+- Individual attendee check-in by ID.
 - Error handling with appropriate HTTP status codes.
 - Database integration with SQLAlchemy and support for relational databases.
 
@@ -114,13 +116,14 @@ This API is ideal for managing events in applications such as:
 
 ### Base URL: `/api/v1`
 
-| Method | Endpoint               | Description                         |
-|--------|-------------------------|-------------------------------------|
-| POST   | `/events/`             | Create a new event                 |
-| PUT    | `/events/{event_id}`   | Update an existing event           |
-| GET    | `/events/`             | Fetch all events with filters      |
-| GET    | `/events/{event_id}`   | Fetch details of a specific event  |
-| DELETE | `/events/{event_id}`   | Delete an event by its ID          |
+| Method | Endpoint                            | Description                        |
+|--------|-------------------------------------|------------------------------------|
+| POST   | `/events/`                          | Create a new event                 |
+| PUT    | `/events/{event_id}`                | Update an existing event           |
+| GET    | `/events/`                          | Fetch all events with filters      |
+| GET    | `/events/{event_id}`                | Fetch details of a specific event  |
+| POST   | `/attendees/check-in/{attendee_id}` | Check in an attendee by ID         |
+| POST   | `/attendees/bulk-check-in`          | Bulk check-in attendees via CSV    |
 
 ---
 
@@ -128,8 +131,8 @@ This API is ideal for managing events in applications such as:
 
 ### `Event` Table
 
-| Column         | Type          | Description                       |
-|----------------|---------------|-----------------------------------|
+| Column         | Type          | Description                      |
+|----------------|---------------|----------------------------------|
 | `event_id`     | Integer (PK)  | Unique identifier for each event |
 | `name`         | String        | Name of the event                |
 | `description`  | String        | Detailed description             |
@@ -139,11 +142,23 @@ This API is ideal for managing events in applications such as:
 | `max_attendees`| Integer       | Maximum attendees allowed        |
 | `status`       | Enum          | Status of the event (Scheduled, Completed, etc.) |
 
+### `Attendee` Table
+
+| Column            | Type          | Description                        |
+|-------------------|---------------|------------------------------------|
+| `attendee_id`     | Integer (PK)  | Unique identifier for the attendee |
+| `first_name`      | String        | First name of the attendee         |
+| `last_name`       | String        | Last name of the attendee          |
+| `email`           | String        | Email address                      |
+| `phone_number`    | String        | Phone number                       |
+| `event_id`        | Integer (FK)  | Linked event ID                    |
+| `check_in_status` | Boolean       | Status of check-in (0 or 1)        |
+
 ---
 
 ## 8. Error Handling
 
-- **404 Not Found**: Returned when a requested resource (e.g., event) is not found.
+- **404 Not Found**: Returned when a requested resource (e.g., event or attendee) is not found.
 - **400 Bad Request**: Returned for validation errors in request data.
 - **500 Internal Server Error**: Returned for unexpected server-side issues.
 
